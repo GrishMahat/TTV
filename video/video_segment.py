@@ -7,8 +7,8 @@ from moviepy.editor import (
     concatenate_videoclips,
     concatenate_audioclips,
 )
-from audio_utils.audio import WaveNetTTS
-from images_utils.image_grabber import ImageGrabber
+from audio.audio import WaveNetTTS
+from image.image_grabber import ImageGrabber
 
 
 class VideoSegment:
