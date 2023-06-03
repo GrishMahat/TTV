@@ -4,11 +4,12 @@ from gtts import gTTS
 from mutagen.mp3 import MP3
 from utils.common import mkdir
 
+
 class TTS:
     def __init__(self, download_location: str = "audio"):
         """
         Args:
-            download_location (str, optional): folder to download audio to. Defaults to "audio".
+            download_location (str, optional): Folder to download audio to. Defaults to "audio".
         """
         self._memory = {}
         self.download_location = download_location
@@ -29,15 +30,15 @@ class TTS:
         Gets TTS for a given string and downloads it to download_location.
 
         Args:
-            text(str): text to turn into speech
+            text(str): Text to turn into speech
         Returns:
-            Tuple[str, float]: path to saved file and audio length
+            Tuple[str, float]: Path to saved file and audio length
         """
         if text in self._memory:
             return self._memory[text]
 
         tts = gTTS(text)
-        audio_file = f"{self.download_location}/{text}.mp3"
+        audio_file = os.path.join(self.download_location, f"{text}.mp3")
         tts.save(audio_file)
 
         # Get audio length for video duration

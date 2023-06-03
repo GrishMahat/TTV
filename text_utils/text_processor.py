@@ -15,25 +15,24 @@ class TextProcessor:
         self.text = text
         self.video_segments = []
         self.sentences = []
-        print("[INFO] Processing text...")
         self._process_text_for_images()
-        print("[INFO] Processed text.")
 
     def _process_text_for_images(self) -> None:
         matches = re.finditer(TextProcessor.TEXT_TEMPLATES["image"], self.text, re.DOTALL)
 
         groups = []
-        for _, match in enumerate(matches):
+        for match in matches:
             try:
                 images_number = int(match.group(2))
-            except ValueError:
+            except (TypeError, ValueError):
                 images_number = 5
             groups.append((match.group(1), images_number))
 
         i = 0
-        for sentence in re.split(
+        sentences = re.split(
             TextProcessor.TEXT_TEMPLATES["split_image"], self.text, re.DOTALL
-        ):
+        )
+        for sentence in sentences:
             if len(sentence) > 0:
                 self.video_segments.append(
                     VideoSegment(
@@ -63,13 +62,3 @@ class TextProcessor:
                     voiceover_segment[idx]["voice"] = sentence.group(1)
 
         return voiceover_segment
-
-
-def main():
-    text = "Your text with [IMAGE: keyword1] and [IMAGE: keyword2] tags."
-    tp = TextProcessor(text)
-    print(tp.sentences)
-
-
-if __name__ == "__main__":
-    main()

@@ -51,6 +51,8 @@ class VideoSegment:
 
         audio_clip = concatenate_audioclips(audio_clips)
         final_clip = concatenate_videoclips(image_clips, method="compose")
-        final_clip.fps = 24
         final_clip = final_clip.set_audio(audio_clip)
+        final_clip = final_clip.set_duration(segment_duration)
+        final_clip.fps = 24
+
         return final_clip

@@ -1,18 +1,15 @@
-from TextToVideo import TextToVideo
+from text_to_video import TextToVideo
 
 def main():
     # Read the text from the file
     with open("test_script.txt", "r") as f:
-        text = f.read()
-    
-    # Remove newlines and replace them with spaces
-    text = text.replace("\n", " ")
+        text = f.read().replace("\n", " ")
     
     # Create an instance of the TextToVideo class
-    ttv = TextToVideo(text, "anime.mp4")
+    ttv = TextToVideo(text, "output.mp4")
     
-    # Generate the video
-    ttv.generate_video()
+    # Process the video elements and generate the video
+    ttv.process_video_elements()
     
     # Save the video
     ttv.save_video()

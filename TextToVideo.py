@@ -1,9 +1,10 @@
 import os
+from pathlib import Path
 from moviepy.editor import concatenate_videoclips
 from images_utils.image_grabber import ImageGrabber
 from text_utils.text_processor import TextProcessor
 from audio_utils.audio import WaveNetTTS
-from utils.common import mkdir
+
 
 class TextToVideo:
     def __init__(self, text: str, output: str):
@@ -15,35 +16,38 @@ class TextToVideo:
         """
         self.text = text
         self.output = output
-        self._gid = ImageGrabber(
-            search_options="ift:jpg",
-            resize=True,
-        )
-        self._text_processor = TextProcessor(self.text)
-        self._wnTTS = WaveNetTTS()
-        self._output_folder = "output"
-        self._video_clips = []
-        mkdir(os.path.join(os.getcwd(), self._output_folder))
+        self.gid = ImageGrabber(search_options="ift:jpg", resize=True)
+        self.text_processor = TextProcessor(self.text)
+        self.wnTTS = WaveNetTTS()
+        self.output_folder = "output"
+        self.video_clips = []
+        self.output_path = self.get_output_path()
 
-    def generate_video(self) -> None:
-        """Generates the video clips/segments to be concatenated on save"""
-        video_segments = self._text_processor.video_segments
+    def process_video_elements(self):
+        """Processes the video elements to generate video clips/segments"""
+        video_segments = self.text_processor.video_segments
         for segment in video_segments:
-            final_clip = segment.generate_segment(self._wnTTS, self._gid)
-            self._video_clips.append(final_clip)
+            final_clip = segment.generate_segment(self.wnTTS, self.gid)
+            self.video_clips.append(final_clip)
 
-    def save_video(self, fps: int = 24) -> None:
+    def save_video(self, fps: int = 24):
         """Saves the processed video
 
         Args:
             fps (int, optional): Desired video FPS. Defaults to 24.
         """
-        if len(self._video_clips) == 0:
-            raise VideoElementsNotProcessed
+        if not self.video_clips:
+            raise VideoElementsNotProcessed("No video elements to save.")
 
-        final_video = concatenate_videoclips(self._video_clips, method="compose")
-        final_video.fps = fps
-        final_video.write_videofile(f"{self._output_folder}/{self.output}")
+        final_video = concatenate_videoclips(self.video_clips, method="compose")
+        final_video = final_video.set_fps(fps)
+        final_video.write_videofile(str(self.output_path))
+
+    def get_output_path(self) -> Path:
+        """Returns the output file path"""
+        output_dir = Path(os.getcwd()) / self.output_folder
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return output_dir / self.output
 
 
 class VideoElementsNotProcessed(Exception):
