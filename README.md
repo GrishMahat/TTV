@@ -1,31 +1,58 @@
-# Video Generation Script
+# TTv
 
-This script processes custom text input and generates videos based on the provided instructions. It supports various tags for image insertion and voice-over narration.
+TTv is a Python application that processes custom text input to generate videos. It supports various features such as image search, voice-over, and video composition. With TTv, you can easily create video segments based on text input and generate engaging videos with dynamic images and voice narration.
 
-## Prerequisites
+## Features
 
-- Python 3.x
-- Required Python packages (specified in requirements.txt)
+- **Text Processing**: TTv processes custom text input and splits it into video segments based on the [IMAGE] tag.
+- **Image Search**: It searches for images based on keywords specified in the text and selects a random set of images for each video segment.
+- **Voice-over**: TTv provides support for voice narration by processing [VOICE] tags in the text and assigning the appropriate voice to each segment.
+- **Video Composition**: It combines the selected images and voice-over to generate a final video segment.
+
+## Requirements
+
+- Python 3.7 or higher
+- Dependencies (can be installed using `pip install -r requirements.txt`)
 
 ## Installation
 
-1. Clone the repository: `git clone https://github.com/your_username/video-generation-script.git`
-2. Navigate to the project directory: `cd video-generation-script`
-3. Install the required packages: `pip install -r requirements.txt`
+1. Clone the repository:
+    git clone https://github.com/GrishMahat/ttv.git
+
+
+2. Navigate to the project directory:
+
+    cd ttv
+
+
+3. Install the dependencies:
+    pip install -r requirements.txt
+
+
 
 ## Usage
 
-1. Prepare your custom text input in a file (e.g., `input.txt`) following the supported tags and format.
-2. Run the script: `python main.py input.txt`
-3. The script will process the input text, generate video segments, and combine them into a final video.
-4. The generated video will be saved as `output.mp4` in the project directory.
+1. Update the text input in the `test_script.txt` file with your desired content. You can add [IMAGE] tags to specify image keywords and [VOICE] tags to assign specific voices for voice-over.
 
-## Customization
+2. Run the `main.py` script to process the text and generate the video:
 
-- Modify the `TextProcessor` class in `text_processor.py` to support additional tags or customize the text processing logic.
-- Customize the `VideoSegment` class in `video_segment.py` to adjust the video generation process, image search, audio settings, etc.
-- Feel free to explore and modify other classes and modules based on your specific requirements.
+python main.py
 
-## Examples
 
-- Example input text:
+3. The generated video segments will be saved in the `output` directory. You can customize the output directory by modifying the `output_directory` variable in `main.py`.
+
+## Configuration
+
+You can customize the behavior of TTv by modifying the following variables in `main.py`:
+
+- `IMAGE_SEARCH_COUNT`: Specifies the number of images to be selected for each video segment. You can adjust this value based on your preferences.
+- `VIDEO_FPS`: Sets the frames per second (FPS) of the generated video. By default, it is set to 24 FPS, but you can modify it as per your requirements.
+- `OUTPUT_DIRECTORY`: Specifies the directory where the generated video segments will be saved. By default, it is set to the `output` directory.
+
+## Contributing
+
+Contributions are welcome! If you have any suggestions, bug reports, or feature requests, please open an issue or submit a pull request.
+
+## License
+
+[MIT License](LICENSE)
