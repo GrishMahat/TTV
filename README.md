@@ -1,4 +1,4 @@
-# TTv
+# TTV
 
 TTv is a Python application that processes custom text input to generate videos. It supports various features such as image search, voice-over, and video composition. With TTv, you can easily create video segments based on text input and generate engaging videos with dynamic images and voice narration.
 
@@ -48,6 +48,6 @@ You can customize the behavior of TTv by modifying the following variables in `m
 
 Contributions are welcome! If you have any suggestions, bug reports, or feature requests, please open an issue or submit a pull request.
 
-## License
 
-[MIT License](LICENSE)
+
+
