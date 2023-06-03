@@ -16,17 +16,12 @@ TTv is a Python application that processes custom text input to generate videos.
 
 ## Installation
 
-1. Clone the repository:
-    git clone https://github.com/GrishMahat/ttv.git
+1. Clone the repository: `git clone https://github.com/GrishMahat/ttv.git`
+
+2. Navigate to the project directory: `cd ttv`
 
 
-2. Navigate to the project directory:
-
-    cd ttv
-
-
-3. Install the dependencies:
-    pip install -r requirements.txt
+3. Install the dependencies: `pip install -r requirements.txt`
 
 
 
