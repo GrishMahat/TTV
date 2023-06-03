@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 from moviepy.editor import concatenate_videoclips
-from images_utils.image_grabber import ImageGrabber
-from text_utils.text_processor import TextProcessor
-from audio_utils.audio import WaveNetTTS
+from image.image_grabber import ImageGrabber
+from text.text_processor import TextProcessor
+from audio.audio import WaveNetTTS
 
 
 class TextToVideo:
