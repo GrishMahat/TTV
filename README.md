@@ -1,10 +1,10 @@
 # TTV
 
-TTv is a Python application that processes custom text input to generate videos. It supports various features such as image search, voice-over, and video composition. With TTv, you can easily create video segments based on text input and generate engaging videos with dynamic images and voice narration.
+TTV is a Python application that processes custom text input to generate videos. It supports various features such as image search, voice-over, and video composition. With TTv, you can easily create video segments based on text input and generate engaging videos with dynamic images and voice narration.
 
 ## Features
 
-- **Text Processing**: TTv processes custom text input and splits it into video segments based on the [IMAGE] tag.
+- **Text Processing**: TTV processes custom text input and splits it into video segments based on the [IMAGE] tag.
 - **Image Search**: It searches for images based on keywords specified in the text and selects a random set of images for each video segment.
 - **Voice-over**: TTv provides support for voice narration by processing [VOICE] tags in the text and assigning the appropriate voice to each segment.
 - **Video Composition**: It combines the selected images and voice-over to generate a final video segment.
@@ -16,9 +16,9 @@ TTv is a Python application that processes custom text input to generate videos.
 
 ## Installation
 
-1. Clone the repository: `git clone https://github.com/GrishMahat/ttv.git`
+1. Clone the repository: `git clone https://github.com/GrishMahat/TTV.git`
 
-2. Navigate to the project directory: `cd ttv`
+2. Navigate to the project directory: `cd TTV`
 
 
 3. Install the dependencies: `pip install -r requirements.txt`
