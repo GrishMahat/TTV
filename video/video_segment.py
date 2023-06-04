@@ -43,16 +43,17 @@ class VideoSegment:
             audio_clips.append(AudioFileClip(audio_file))
 
         image_duration = segment_duration / self.images_number
-        images = gid.search_image(self.image_keyword)
+        images = gid.search_images(self.image_keyword)
         random_images = random.sample(images, self.images_number)
 
         for video_image in random_images:
-            image_clips.append(ImageClip(video_image, duration=image_duration))
+            image_clip = ImageClip(video_image, duration=image_duration)
+            image_clips.append(image_clip)
 
         audio_clip = concatenate_audioclips(audio_clips)
         final_clip = concatenate_videoclips(image_clips, method="compose")
         final_clip = final_clip.set_audio(audio_clip)
         final_clip = final_clip.set_duration(segment_duration)
-        final_clip.fps = 24
+        final_clip = final_clip.set_fps(24)
 
         return final_clip

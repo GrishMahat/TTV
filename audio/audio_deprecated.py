@@ -20,9 +20,10 @@ class TTS:
         local_files = {}
         for file in os.listdir(self.download_location):
             audio_file = os.path.join(self.download_location, file)
-            if os.path.isfile(audio_file):
+            if os.path.isfile(audio_file) and file.endswith(".mp3"):
                 mp3 = MP3(audio_file)
-                local_files[file.strip(".mp3")] = (audio_file, mp3.info.length)
+                text = file[:-4]  # Remove the '.mp3' extension
+                local_files[text] = (audio_file, mp3.info.length)
         self._memory = local_files
 
     def getTTS(self, text: str) -> Tuple[str, float]:

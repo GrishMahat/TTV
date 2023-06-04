@@ -41,12 +41,14 @@ class WaveNetTTS:
     def __init__(
         self,
         audio_config: texttospeech.AudioConfig = None,
+        output_folder: str = "tts_output",
     ):
         """Initializes client to Google's TTS
 
         Args:
             audio_config (texttospeech.AudioConfig, optional): Audio configs like pitch, speed, more info on Google TTS
                 documentation. Defaults to None.
+            output_folder (str, optional): Folder to save output audio files. Defaults to "tts_output".
         """
         self.client = texttospeech.TextToSpeechClient()
         self.audio_config = audio_config
@@ -54,8 +56,8 @@ class WaveNetTTS:
             self.audio_config = texttospeech.AudioConfig(
                 audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=1
             )
-        self.output = os.path.join(os.getcwd(), "tts_output")
-        mkdir(self.output)
+        self.output_folder = output_folder
+        mkdir(output_folder)
 
     def generate_tts(
         self, text: str, filename: str, voice_name: str = None
@@ -75,7 +77,9 @@ class WaveNetTTS:
                 language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
             )
         else:
-            voice_params = WaveNetTTS.VOICES[voice_name]
+            voice_params = WaveNetTTS.VOICES.get(voice_name)
+            if voice_params is None:
+                voice_params = WaveNetTTS.VOICES["DEFAULT"]
             voice = texttospeech.VoiceSelectionParams(
                 language_code="en-US",
                 name=voice_params[0],
@@ -86,11 +90,11 @@ class WaveNetTTS:
             input=synthesis_input, voice=voice, audio_config=self.audio_config
         )
 
-        audio_file = os.path.join(self.output, filename)
+        audio_file = os.path.join(self.output_folder, filename)
         with open(audio_file, "wb") as out:
             # Write the response to the output file.
             out.write(response.audio_content)
-            print(f'[INFO] Audio content written to file "{self.output}/{filename}"')
+            print(f'[INFO] Audio content written to file "{audio_file}"')
 
         mp3 = MP3(audio_file)
         return audio_file, mp3.info.length
