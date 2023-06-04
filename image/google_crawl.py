@@ -1,7 +1,6 @@
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
-import selenium.common.exceptions as sel_ex
 import sys
 import time
 import urllib.parse
@@ -17,9 +16,9 @@ css_thumbnail = "img.Q4LuWd"
 css_large = "img.n3VNCb"
 css_load_more = ".mye4qd"
 selenium_exceptions = (
-    sel_ex.ElementClickInterceptedException,
-    sel_ex.ElementNotInteractableException,
-    sel_ex.StaleElementReferenceException,
+    webdriver.ElementClickInterceptedException,
+    webdriver.ElementNotInteractableException,
+    webdriver.StaleElementReferenceException,
 )
 
 
@@ -47,7 +46,7 @@ def get_image_src(wd):
             "https://encrypted-tbn0.gstatic.com/"
         ):
             sources.append(src)
-    if not len(sources):
+    if not sources:
         raise KeyError("no large image")
     return sources
 
@@ -66,7 +65,7 @@ def get_images(wd, start=0, n=20, out=None):
         scroll_to_end(wd)
         try:
             thumbnails = get_thumbnails(wd, want_more_than=count)
-        except KeyError as e:
+        except KeyError:
             logger.warning("cannot load enough thumbnails")
             break
         count = len(thumbnails)
@@ -74,15 +73,14 @@ def get_images(wd, start=0, n=20, out=None):
     for tn in thumbnails:
         try:
             retry_click(tn)
-        except selenium_exceptions as e:
+        except selenium_exceptions:
             logger.warning("main image click failed")
             continue
         sources1 = []
         try:
             sources1 = get_image_src(wd)
-        except KeyError as e:
+        except KeyError:
             pass
-            # logger.warning("main image not found")
         if not sources1:
             tn_src = tn.get_attribute("src")
             if not tn_src.startswith("data"):
@@ -91,7 +89,7 @@ def get_images(wd, start=0, n=20, out=None):
             else:
                 logger.warning("no src found for main image, thumbnail is a data URL")
         for src in sources1:
-            if not src in sources:
+            if src not in sources:
                 sources.append(src)
                 if out:
                     print(src, file=out)
@@ -114,9 +112,7 @@ def google_image_search(wd, query, safe="off", n=20, opts="", out=None):
 def run_search(query, safe, n, options, out=None):
     opts = Options()
     opts.add_argument("--headless")
-    
+
     with webdriver.Chrome(ChromeDriverManager().install(), options=opts) as wd:
-        sources = google_image_search(
-            wd, query, safe=safe, n=n, opts=options, out=None
-        )
+        sources = google_image_search(wd, query, safe=safe, n=n, opts=options, out=out)
     return sources
