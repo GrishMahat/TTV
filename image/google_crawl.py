@@ -7,6 +7,7 @@ import urllib.parse
 from retry import retry
 import argparse
 import logging
+from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException, StaleElementReferenceException
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 logger = logging.getLogger()
@@ -16,9 +17,9 @@ css_thumbnail = "img.Q4LuWd"
 css_large = "img.n3VNCb"
 css_load_more = ".mye4qd"
 selenium_exceptions = (
-    webdriver.ElementClickInterceptedException,
-    webdriver.ElementNotInteractableException,
-    webdriver.StaleElementReferenceException,
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+    StaleElementReferenceException,
 )
 
 
