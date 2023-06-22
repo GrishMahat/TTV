@@ -4,7 +4,6 @@ from tkinter.filedialog import askopenfilename
 from TextToVideo import TextToVideo
 
 def choose_input_file() -> str:
-    """Prompts the user to choose an input file and returns its path."""
     Tk().withdraw()  # Hide the Tkinter root window
     filetypes = [("Text files", "*.txt"), ("All files", "*.*")]
     input_file = askopenfilename(filetypes=filetypes)
