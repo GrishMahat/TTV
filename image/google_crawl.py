@@ -1,17 +1,19 @@
+import os
+import time
+import urllib.parse
+import argparse
+import logging
+import sys
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
-import sys
-import time
-import urllib.parse
-from retry import retry
-import argparse
-import logging
 from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException, StaleElementReferenceException
+from retry import retry
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 logger = logging.getLogger()
 retry_logger = None
+
 
 css_thumbnail = "img.Q4LuWd"
 css_large = "img.n3VNCb"
@@ -21,7 +23,6 @@ selenium_exceptions = (
     ElementNotInteractableException,
     StaleElementReferenceException,
 )
-
 
 def scroll_to_end(wd):
     wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -101,14 +102,15 @@ def get_images(wd, start=0, n=20, out=None):
 
 
 def google_image_search(wd, query, safe="off", n=20, opts="", out=None):
+    # Build the search URL
     search_url_t = "https://www.google.com/search?safe={safe}&site=&tbm=isch&source=hp&q={q}&oq={q}&gs_l=img&tbs={opts}"
     search_url = search_url_t.format(
         q=urllib.parse.quote(query), opts=urllib.parse.quote(opts), safe=safe
     )
+    
     wd.get(search_url)
     sources = get_images(wd, n=n, out=out)
     return sources
-
 
 def run_search(query, safe, n, options, out=None):
     opts = Options()
@@ -117,3 +119,24 @@ def run_search(query, safe, n, options, out=None):
     with webdriver.Chrome(ChromeDriverManager().install(), options=opts) as wd:
         sources = google_image_search(wd, query, safe=safe, n=n, opts=options, out=out)
     return sources
+def main():
+    parser = argparse.ArgumentParser(description="Perform a Google image search.")
+    parser.add_argument("query", type=str, help="Search query")
+    parser.add_argument("--safe", type=str, default="off", help="Safe search setting")
+    parser.add_argument("--n", type=int, default=20, help="Number of images to fetch")
+    parser.add_argument("--options", type=str, default="", help="Additional search options")
+    parser.add_argument("--out", type=str, default=None, help="Output file path")
+    
+    args = parser.parse_args()
+    
+    out_file = None
+    if args.out:
+        out_file = open(args.out, "w")
+    
+    sources = run_search(args.query, args.safe, args.n, args.options, out=out_file)
+    
+    if out_file:
+        out_file.close()
+
+if __name__ == "__main__":
+    main()

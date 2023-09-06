@@ -1,9 +1,9 @@
 import os
+import logging
 from typing import Tuple
 from google.cloud import texttospeech
 from mutagen.mp3 import MP3
 from utils.common import mkdir
-
 
 class WaveNetTTS:
     VOICES = {
@@ -20,81 +20,85 @@ class WaveNetTTS:
         "DEFAULT": ("en-US-Wavenet-J", 1),
     }
 
-    @classmethod
-    def get_voices(cls, gender):
-        """Class method to return all voices by given gender
-
-        Args:
-            gender (str): gender to filter by
-
-        Returns:
-            List[Tuple[str, int]]: List of Tuples of (voice_name, gender)
-        """
-        if gender.lower() == "male":
-            gender = 1
-        elif gender.lower() == "female":
-            gender = 2
-        else:
-            return None
-        return [v for _, v in WaveNetTTS.VOICES.items() if v[1] == gender]
-
     def __init__(
         self,
         audio_config: texttospeech.AudioConfig = None,
         output_folder: str = "tts_output",
     ):
-        """Initializes client to Google's TTS
-
-        Args:
-            audio_config (texttospeech.AudioConfig, optional): Audio configs like pitch, speed, more info on Google TTS
-                documentation. Defaults to None.
-            output_folder (str, optional): Folder to save output audio files. Defaults to "tts_output".
-        """
         self.client = texttospeech.TextToSpeechClient()
-        self.audio_config = audio_config
-        if self.audio_config is None:
-            self.audio_config = texttospeech.AudioConfig(
-                audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=1
-            )
+        self.audio_config = audio_config or texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=1
+        )
         self.output_folder = output_folder
         mkdir(output_folder)
+
+        # Initialize the logger
+        self.logger = logging.getLogger(__name__)
 
     def generate_tts(
         self, text: str, filename: str, voice_name: str = None
     ) -> Tuple[str, float]:
-        """Synthesizes speech and generates the audio file for a given text
-
-        Args:
-            text (str): text to turn into speech
-            filename (str): filename to save output
-            voice_name (str, optional): Voice name for WaveNet. Defaults to None.
-
-        Returns:
-            Tuple[str, float]: output audio file path, audio file duration in seconds
-        """
-        if voice_name is None:
-            voice = texttospeech.VoiceSelectionParams(
-                language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-            )
-        else:
-            voice_params = WaveNetTTS.VOICES.get(voice_name)
-            if voice_params is None:
+        try:
+            # Validate the provided voice_name or use the default
+            if voice_name:
+                voice_params = WaveNetTTS.VOICES.get(voice_name)
+                if voice_params is None:
+                    raise ValueError(f"Invalid voice_name: {voice_name}")
+            else:
                 voice_params = WaveNetTTS.VOICES["DEFAULT"]
+
             voice = texttospeech.VoiceSelectionParams(
                 language_code="en-US",
                 name=voice_params[0],
                 ssml_gender=voice_params[1],
             )
-        synthesis_input = texttospeech.SynthesisInput(text=text)
-        response = self.client.synthesize_speech(
-            input=synthesis_input, voice=voice, audio_config=self.audio_config
-        )
 
-        audio_file = os.path.join(self.output_folder, filename)
-        with open(audio_file, "wb") as out:
-            # Write the response to the output file.
-            out.write(response.audio_content)
-            print(f'[INFO] Audio content written to file "{audio_file}"')
+            synthesis_input = texttospeech.SynthesisInput(text=text)
+            response = self.client.synthesize_speech(
+                input=synthesis_input, voice=voice, audio_config=self.audio_config
+            )
 
-        mp3 = MP3(audio_file)
-        return audio_file, mp3.info.length
+            audio_file = os.path.join(self.output_folder, filename)
+            with open(audio_file, "wb") as out:
+                out.write(response.audio_content)
+                self.logger.info(f'Audio content written to file "{audio_file}"')
+
+            mp3 = MP3(audio_file)
+            return audio_file, mp3.info.length
+
+        except Exception as e:
+            self.logger.error(f"Error generating TTS: {str(e)}")
+            raise
+
+
+def generate_tts(
+    self, text: str, filename: str, voice_name: str = None
+) -> Tuple[str, float]:
+   
+    # Validate the provided voice_name or use the default
+    if voice_name:
+        voice_params = WaveNetTTS.VOICES.get(voice_name)
+        if voice_params is None:
+            raise ValueError(f"Invalid voice_name: {voice_name}")
+    else:
+        voice_params = WaveNetTTS.VOICES["DEFAULT"]
+
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US",
+        name=voice_params[0],
+        ssml_gender=voice_params[1],
+    )
+
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    response = self.client.synthesize_speech(
+        input=synthesis_input, voice=voice, audio_config=self.audio_config
+    )
+
+    audio_file = os.path.join(self.output_folder, filename)
+    with open(audio_file, "wb") as out:
+        # Write the response to the output file.
+        out.write(response.audio_content)
+        print(f'[INFO] Audio content written to file "{audio_file}"')
+
+    mp3 = MP3(audio_file)
+    return audio_file, mp3.info.length
