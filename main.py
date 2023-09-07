@@ -2,8 +2,11 @@ import os
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from TextToVideo import TextToVideo
+from tkinter.filedialog import askopenfilename
 
+from src.TextToVideo import TextToVideo 
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 class TextToVideoGUI:
     def __init__(self, root):
         self.root = root
@@ -50,6 +53,7 @@ class TextToVideoGUI:
             messagebox.showinfo("Success", f"Video saved as '{output_file}.mp4'.")
         except Exception as e:
             messagebox.showerror("Error", f"Error occurred: {str(e)}")
+
 
 def main():
     root = tk.Tk()

@@ -10,7 +10,7 @@ from moviepy.editor import (
 )
 from pydub import AudioSegment
 from PIL import Image
-from image.image_grabber import ImageGrabber
+from scr.image.image_grabber import ImageGrabber
 
 # Create a logger
 logger = logging.getLogger(__name__)

@@ -1,9 +1,9 @@
 import os
 from typing import Tuple, List
 from PIL import Image
-from google_crawl import run_search
+from src.image.google_crawl import run_search  # Import run_search using the new project structure
 import requests
-from utils.common import mkdir
+from src.utils.common import mkdir
 
 class ImageGrabber:
     IMAGE_FORMAT = "JPEG"

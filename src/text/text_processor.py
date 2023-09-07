@@ -1,7 +1,6 @@
 import re
 from typing import List, Dict
-from video_segment import VideoSegment
-
+from src.video.video_segment import VideoSegment
 
 class TextProcessor:
     TEXT_TEMPLATES = {
