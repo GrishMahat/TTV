@@ -1,7 +1,3 @@
-Absolutely, I'll revise the document without removing any duplicate content:
-
----
-
 # TTV
 
 TTV is a Python application that processes custom text input to generate videos. It supports various features such as image search, voice-over, and video composition. With TTV, you can easily create video segments based on text input and generate engaging videos with dynamic images and voice narration.
