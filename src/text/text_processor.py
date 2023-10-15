@@ -7,6 +7,7 @@ class TextProcessor:
     TEXT_TEMPLATES = {
         "image": r"\[IMAGE:\s*(.+?)(\d*?)]",
         "search_voice": r"\[VOICE:\s*(.+?)](.+?)\[\/VOICE]",
+        "video": r"\[VIDEO:\s*(.+?)]",
     }
 
     def __init__(self, text: str):
@@ -30,6 +31,7 @@ class TextProcessor:
                 self.video_segments.append(video_segment)
                 self.sentences.append((sentence, image_keyword))
 
+
         # Handle remaining sentences here (e.g., log or skip)
 
     def _process_voices(self, text: str) -> List[Dict]:
@@ -47,3 +49,4 @@ class TextProcessor:
                     segment["voice"] = voice_tag
 
         return voiceover_segments
+
