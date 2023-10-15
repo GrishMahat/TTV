@@ -23,7 +23,6 @@ class TextToVideoGUI:
 
         self.output_file_entry = tk.Entry(root, width=40)
         self.output_file_entry.pack()
-
         self.convert_button = tk.Button(root, text="Convert", command=self.convert)
         self.convert_button.pack(pady=10)
 

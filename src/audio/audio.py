@@ -76,7 +76,6 @@ def generate_tts(
     self, text: str, filename: str, voice_name: str = None
 ) -> Tuple[str, float]:
    
-    # Validate the provided voice_name or use the default
     if voice_name:
         voice_params = WaveNetTTS.VOICES.get(voice_name)
         if voice_params is None:
@@ -97,7 +96,6 @@ def generate_tts(
 
     audio_file = os.path.join(self.output_folder, filename)
     with open(audio_file, "wb") as out:
-        # Write the response to the output file.
         out.write(response.audio_content)
         print(f'[INFO] Audio content written to file "{audio_file}"')
 
