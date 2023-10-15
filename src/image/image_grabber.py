@@ -1,22 +1,16 @@
 import os
-from typing import Tuple, List
-from PIL import Image
-from google_crawl import run_search 
 import requests
-from src.utils.common import mkdir
+from typing import List, Tuple
+from PIL import Image
+from threading import Lock
+import logging
+
+from .google_crawl import run_search  # Import run_search from the same directory
 
 class ImageGrabber:
     IMAGE_FORMAT = "JPEG"
 
-    def __init__(
-        self,
-        search_options: str = "",
-        resize: bool = False,
-        size: Tuple[int, int] = (1920, 1080),
-        to_download: int = 20,
-        download_location: str = "downloads",
-        temp_location: str = "temp",
-    ):
+    def __init__(self, search_options: str = "", resize: bool = False, size: Tuple[int, int] = (1920, 1080), to_download: int = 20, download_location: str = "downloads", temp_location: str = "temp"):
         self._search_options = search_options
         self._resize = resize
         self._size = size
@@ -25,8 +19,8 @@ class ImageGrabber:
         self.images_count = 0
         self.to_download = to_download
         self._memory = {}
-        mkdir(self.download_folder)
-        mkdir(self.temp_folder)
+        self.lock = Lock()  # For thread safety
+        self._initialize_folders()
         self._load_images()
 
     def _load_images(self) -> None:
@@ -40,22 +34,25 @@ class ImageGrabber:
             ]
         self._memory = local_files
 
+    def _initialize_folders(self):
+        for folder in [self.download_folder, self.temp_folder]:
+            os.makedirs(folder, exist_ok=True)
+
     def _download_from_url(self, url: str, keyword: str) -> str:
-        self.images_count += 1
-        mkdir(os.path.join(self.download_folder, keyword))
-        print(f"[INFO] Downloading from URL: {url}")
-        download_path = os.path.join(
-            self.download_folder, keyword, f"image_{self.images_count}.jpg"
-        )
-        print(f"[INFO] Downloading to: {download_path}")
-        res = requests.get(url)
-        if res.status_code != 200:
-            print(f"[WARNING] Skipping downloading image, got status {res.status_code}")
-            self.images_count -= 1
+        try:
+            with self.lock:  # Lock to ensure thread safety
+                self.images_count += 1
+                download_path = os.path.join(self.download_folder, keyword, f"image_{self.images_count}.jpg")
+            res = requests.get(url)
+            if res.status_code != 200:
+                logging.warning(f"Skipping downloading image, got status {res.status_code}")
+                return None
+            with open(download_path, "wb") as handler:
+                handler.write(res.content)
+            return download_path
+        except Exception as e:
+            logging.error(f"Error downloading image: {e}")
             return None
-        with open(download_path, "wb") as handler:
-            handler.write(res.content)
-        return download_path
 
     def search_images(self, keyword: str) -> List[str]:
         word = keyword.strip()

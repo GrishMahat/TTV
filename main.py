@@ -54,6 +54,8 @@ class TextToVideoGUI:
             messagebox.showerror("Error", f"Error occurred: {str(e)}")
 
 
+
+
 def main():
     root = tk.Tk()
     app = TextToVideoGUI(root)
@@ -61,3 +63,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
