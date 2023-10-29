@@ -1,68 +1,28 @@
-import os
-import sys
-import tkinter as tk
-from tkinter import filedialog, messagebox
-from tkinter.filedialog import askopenfilename
+from flask import Flask, request, jsonify
 
-from src.TextToVideo import TextToVideo 
+from src.TextToVideo import TextToVideo
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-class TextToVideoGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Text to Video Converter")
+app = Flask(__name)
 
-        self.input_text = tk.Text(root, height=10, width=40)
-        self.input_text.pack(padx=20, pady=(20, 10))
+@app.route('/convert_text_to_video', methods=['POST'])
+def convert_text_to_video():
+    try:
+        text = request.form.get('text')
+        output_file = request.form.get('output_file')
 
-        self.select_file_button = tk.Button(root, text="Select Input File", command=self.choose_input_file)
-        self.select_file_button.pack(pady=10)
-
-        self.output_file_label = tk.Label(root, text="Output File Name (without extension):")
-        self.output_file_label.pack()
-
-        self.output_file_entry = tk.Entry(root, width=40)
-        self.output_file_entry.pack()
-        self.convert_button = tk.Button(root, text="Convert", command=self.convert)
-        self.convert_button.pack(pady=10)
-
-    def choose_input_file(self):
-        filetypes = [("Text files", "*.txt"), ("All files", "*.*")]
-        input_file = filedialog.askopenfilename(filetypes=filetypes)
-        if input_file:
-            with open(input_file, "r") as f:
-                text = f.read()
-            self.input_text.delete("1.0", tk.END)
-            self.input_text.insert(tk.END, text)
-
-    def convert(self):
-        text = self.input_text.get("1.0", tk.END).strip()
-        output_file = self.output_file_entry.get().strip()
         if not text:
-            messagebox.showerror("Error", "Input text is empty.")
-            return
+            return jsonify({'error': 'Input text is empty'})
+
         if not output_file:
-            messagebox.showerror("Error", "Output file name is empty.")
-            return
+            return jsonify({'error': 'Output file name is empty'})
 
-        try:
-            ttv = TextToVideo(text, output_file + ".mp4")
-            ttv.process_video_elements()
-            ttv.save_video()
-            messagebox.showinfo("Success", f"Video saved as '{output_file}.mp4'.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Error occurred: {str(e)}")
-
-
-
-
-def main():
-    root = tk.Tk()
-    app = TextToVideoGUI(root)
-    root.mainloop()
+        ttv = TextToVideo(text, output_file + '.mp4')
+        ttv.process_video_elements()
+        ttv.save_video()
+        
+        return jsonify({'message': 'Video saved successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 if __name__ == "__main__":
-    main()
-
-
-
+    app.run(debug=True)
