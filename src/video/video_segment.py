@@ -1,18 +1,21 @@
-import random
-import os
 import logging
+import os
+import random
 from typing import List, Dict, Tuple
+
+import requests
+from PIL import Image
 from moviepy.editor import (
     ImageClip,
-    AudioFileClip,
     VideoClip,
     concatenate_videoclips,
 )
 from pydub import AudioSegment
-from PIL import Image
+
 from src.image.image_grabber import ImageGrabber
 
-logger = logging.getLogger(__name)
+logger = logging.getLogger(__name__)
+
 
 class VideoSegment:
     IMAGE_FORMAT_RGB = "RGB"
@@ -62,12 +65,18 @@ class VideoSegment:
                 logger.error(f"Error resizing images: {e}")
         return resized_images
 
+
+
+
     def _resize_image(self, image: Image.Image, size: Tuple[int, int]) -> Image.Image:
         # Resize logic here
+        resized_image = image.resize(size, Image.ANTIALIAS)
         return resized_image
+
 
     def _get_save_path(self, image_path: str):
         # Save path logic here
+        save_path = os.path.splitext(image_path)[0] + "_resized.jpg"
         return save_path
 
     def generate_segment(self, tts, gid: ImageGrabber, download_folder: str, size: Tuple[int, int]) -> VideoClip:
@@ -78,7 +87,7 @@ class VideoSegment:
         images = self._download_images(random_image_urls, self.image_keyword, download_folder)
         resized_images = self._resize_images(images, size)
 
-        image_clips = [ImageClip(image, duration=segment_duration) for image in resized_images]
+        image_clips = [ImageClip(image, duration=0) for image in resized_images]  # Initialize duration to 0
 
         audio_clips = []
         segment_duration = 0
@@ -95,9 +104,14 @@ class VideoSegment:
 
         audio_clip = sum(audio_clips)
 
+        # Update the duration of each image clip
+        for clip in image_clips:
+            clip = clip.set_duration(segment_duration)
+
         final_clip = concatenate_videoclips(image_clips, method="compose")
         final_clip = final_clip.set_audio(audio_clip)
         final_clip = final_clip.set_duration(segment_duration)
         final_clip = final_clip.set_fps(24)
 
         return final_clip
+

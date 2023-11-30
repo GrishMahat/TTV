@@ -4,8 +4,7 @@ from typing import Tuple
 from google.cloud import texttospeech
 from mutagen.mp3 import MP3
 
-from src.utils.common import mkdir  
-
+from src.utils.common import mkdir
 class WaveNetTTS:
     VOICES = {
         "A": ("en-US-Wavenet-A", 1),
@@ -49,7 +48,7 @@ class WaveNetTTS:
                 voice_params = WaveNetTTS.VOICES["DEFAULT"]
 
             voice = texttospeech.VoiceSelectionParams(
-                language_code="en-US",
+                language_code = "en-US",
                 name=voice_params[0],
                 ssml_gender=voice_params[1],
             )

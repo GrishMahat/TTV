@@ -4,9 +4,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter.filedialog import askopenfilename
 
-from src.TextToVideo import TextToVideo 
+from src.TextToVideo import TextToVideo
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+
 class TextToVideoGUI:
     def __init__(self, root):
         self.root = root
@@ -54,15 +56,11 @@ class TextToVideoGUI:
             messagebox.showerror("Error", f"Error occurred: {str(e)}")
 
 
-
-
 def main():
     root = tk.Tk()
     app = TextToVideoGUI(root)
     root.mainloop()
 
+
 if __name__ == "__main__":
     main()
-
-
-

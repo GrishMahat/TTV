@@ -5,7 +5,7 @@ from PIL import Image
 from threading import Lock
 import logging
 
-from .google_crawl import run_search  # Import run_search from the same directory
+from src.image.google_crawl import run_search # Import run_search from the same directory
 
 class ImageGrabber:
     IMAGE_FORMAT = "JPEG"

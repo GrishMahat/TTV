@@ -2,9 +2,10 @@ import logging
 from pathlib import Path
 from moviepy.editor import concatenate_videoclips
 
-from image.image_grabber import ImageGrabber
-from text.text_processor import TextProcessor
-from audio.audio import WaveNetTTS
+from src.image.image_grabber import ImageGrabber
+from src.text.text_processor import TextProcessor
+from src.audio.audio import WaveNetTTS
+
 
 
 logging.basicConfig(level=logging.INFO)

@@ -4,7 +4,8 @@ from typing import Tuple
 from gtts import gTTS
 from mutagen.mp3 import MP3
 
-from src.utils.common import mkdir  
+from src.utils.common import mkdir
+
 
 class TTS:
     def __init__(self, download_location: str = "audio"):
