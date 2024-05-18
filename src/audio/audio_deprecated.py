@@ -1,15 +1,17 @@
 import os
 import logging
+import re
 from typing import Tuple
 from gtts import gTTS
 from mutagen.mp3 import MP3
-
 from src.utils.common import mkdir
 
 
 class TTS:
     def __init__(self, download_location: str = "audio"):
         """
+        Initialize the TTS object.
+
         Args:
             download_location (str, optional): Folder to download audio to. Defaults to "audio".
         """
@@ -22,6 +24,9 @@ class TTS:
         self.logger = logging.getLogger(__name__)
 
     def _load_audio(self):
+        """
+        Load existing audio files into memory.
+        """
         local_files = {}
         for file in os.listdir(self.download_location):
             audio_file = os.path.join(self.download_location, file)
@@ -33,20 +38,21 @@ class TTS:
 
     def get_tts(self, text: str) -> Tuple[str, float]:
         """
-        Gets TTS for a given string and downloads it to download_location.
+        Get TTS for a given string and download it to download_location if not already cached.
 
         Args:
             text (str): Text to turn into speech.
-        
+
         Returns:
             Tuple[str, float]: Path to saved file and audio length.
         """
         try:
-            if text in self._memory:
-                return self._memory[text]
+            # Sanitize text to create a valid file name
+            safe_text = re.sub(r'\W+', '_', text)
 
-            # Validate and sanitize text for use as a file name
-            safe_text = "".join(c for c in text if c.isalnum() or c.isspace())
+            if safe_text in self._memory:
+                return self._memory[safe_text]
+
             audio_file = os.path.join(self.download_location, f"{safe_text}.mp3")
 
             if not os.path.isfile(audio_file):

@@ -9,6 +9,7 @@ colorama
 configparser
 crayons
 decorator
+pyttsx3
 google-api-core
 google-api-python-client
 google-auth

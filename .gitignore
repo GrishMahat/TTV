@@ -18,6 +18,7 @@ libs/
 site-packages/
 dist/
 build/
+.gitignore
 
 # Python distribution
 *.egg-info/
