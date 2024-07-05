@@ -4,6 +4,12 @@ import re
 from typing import Tuple
 from gtts import gTTS
 from mutagen.mp3 import MP3
+import os
+import sys
+
+# Ensure the src directory is in the sys.path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
 from src.utils.common import mkdir
 
 
@@ -15,26 +21,28 @@ class TTS:
         Args:
             download_location (str, optional): Folder to download audio to. Defaults to "audio".
         """
+        self.logger = logging.getLogger(__name__)
         self._memory = {}
         self.download_location = download_location
         mkdir(download_location)
         self._load_audio()
 
-        # Initialize the logger
-        self.logger = logging.getLogger(__name__)
-
-    def _load_audio(self):
+    def _load_audio(self) -> None:
         """
         Load existing audio files into memory.
         """
         local_files = {}
-        for file in os.listdir(self.download_location):
-            audio_file = os.path.join(self.download_location, file)
-            if os.path.isfile(audio_file) and file.endswith(".mp3"):
-                mp3 = MP3(audio_file)
-                text = file[:-4]  # Remove the '.mp3' extension
-                local_files[text] = (audio_file, mp3.info.length)
-        self._memory = local_files
+        try:
+            for file in os.listdir(self.download_location):
+                audio_file = os.path.join(self.download_location, file)
+                if os.path.isfile(audio_file) and file.endswith(".mp3"):
+                    mp3 = MP3(audio_file)
+                    text = file[:-4]  # Remove the '.mp3' extension
+                    local_files[text] = (audio_file, mp3.info.length)
+            self._memory = local_files
+        except Exception as e:
+            self.logger.error(f"Error loading audio files: {str(e)}")
+            raise
 
     def get_tts(self, text: str) -> Tuple[str, float]:
         """
@@ -56,6 +64,7 @@ class TTS:
             audio_file = os.path.join(self.download_location, f"{safe_text}.mp3")
 
             if not os.path.isfile(audio_file):
+                self.logger.info(f"Generating new TTS for text: {text}")
                 tts = gTTS(text)
                 tts.save(audio_file)
 

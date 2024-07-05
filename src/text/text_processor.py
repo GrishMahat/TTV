@@ -1,6 +1,15 @@
 import re
-from typing import List, Dict
+from typing import List, Dict, Tuple
+import os
+import sys
+import logging
+
+# Ensure the src directory is in the sys.path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
 from src.video.video_segment import VideoSegment
+
+logger = logging.getLogger(__name__)
 
 class TextProcessor:
     TEXT_TEMPLATES = {
@@ -8,40 +17,66 @@ class TextProcessor:
         "search_voice": r"\[VOICE:\s*(.+?)](.+?)\[\/VOICE]",
     }
 
+    DEFAULT_IMAGE_COUNT = 5
+    DEFAULT_VOICE = "DEFAULT"
+
     def __init__(self, text: str):
         self.text = text
-        self.video_segments = []
-        self.sentences = []
+        self.video_segments: List[VideoSegment] = []
+        self.sentences: List[Tuple[str, str]] = []
         self._process_text_for_images()
 
     def _process_text_for_images(self) -> None:
         """
         Processes the text to extract image keywords and create video segments.
         """
-        image_matches = list(re.finditer(TextProcessor.TEXT_TEMPLATES["image"], self.text))
-        sentences = re.split(TextProcessor.TEXT_TEMPLATES["image"], self.text)
+        try:
+            image_matches = list(re.finditer(self.TEXT_TEMPLATES["image"], self.text))
+            sentences = re.split(self.TEXT_TEMPLATES["image"], self.text)
 
-        for i, match in enumerate(image_matches):
-            image_keyword = match.group(1).strip()
-            images_number = int(match.group(2) or 5)
+            for i, match in enumerate(image_matches):
+                image_keyword = match.group(1).strip()
+                images_number = int(match.group(2) or self.DEFAULT_IMAGE_COUNT)
 
-            if i < len(sentences):
-                sentence = sentences[i].strip()
-                voiceover_segments = self._process_voices(sentence)
-                video_segment = VideoSegment(sentence, voiceover_segments, image_keyword, i + 1, images_number)
-                self.video_segments.append(video_segment)
-                self.sentences.append((sentence, image_keyword))
+                if i < len(sentences):
+                    sentence = sentences[i].strip()
+                    video_segment = self._create_video_segment(sentence, image_keyword, i + 1, images_number)
+                    self.video_segments.append(video_segment)
+                    self.sentences.append((sentence, image_keyword))
 
-        # Process remaining sentences without image tags
-        for sentence in sentences[len(image_matches):]:
-            sentence = sentence.strip()
-            if sentence:
-                voiceover_segments = self._process_voices(sentence)
-                video_segment = VideoSegment(sentence, voiceover_segments, "", len(self.video_segments) + 1, 0)
-                self.video_segments.append(video_segment)
-                self.sentences.append((sentence, ""))
+            # Process remaining sentences without image tags
+            for sentence in sentences[len(image_matches):]:
+                sentence = sentence.strip()
+                if sentence:
+                    video_segment = self._create_video_segment(sentence, "", len(self.video_segments) + 1, 0)
+                    self.video_segments.append(video_segment)
+                    self.sentences.append((sentence, ""))
 
-    def _process_voices(self, text: str) -> List[Dict]:
+            logger.info(f"Processed {len(self.video_segments)} video segments")
+        except Exception as e:
+            logger.error(f"Error processing text for images: {e}", exc_info=True)
+
+    def _create_video_segment(self, sentence: str, image_keyword: str, order: int, images_number: int) -> VideoSegment:
+        """
+        Creates a video segment.
+
+        Args:
+            sentence (str): The sentence for the segment.
+            image_keyword (str): The keyword for the image search.
+            order (int): The order of the segment in the video.
+            images_number (int): The number of images to search for.
+
+        Returns:
+            VideoSegment: The created video segment.
+        """
+        try:
+            voiceover_segments = self._process_voices(sentence)
+            return VideoSegment(sentence, voiceover_segments, image_keyword, order, images_number)
+        except Exception as e:
+            logger.error(f"Error creating video segment: {e}", exc_info=True)
+            return VideoSegment(sentence, [], image_keyword, order, images_number)
+
+    def _process_voices(self, text: str) -> List[Dict[str, str]]:
         """
         Processes the text to extract voice segments.
 
@@ -49,25 +84,36 @@ class TextProcessor:
             text (str): The text to process for voice segments.
 
         Returns:
-            List[Dict]: A list of dictionaries with voice and text pairs.
+            List[Dict[str, str]]: A list of dictionaries with voice and text pairs.
         """
-        voiceover_segments = []
-        text_segments = re.split(TextProcessor.TEXT_TEMPLATES["search_voice"], text)
-        voice_segments = list(re.finditer(TextProcessor.TEXT_TEMPLATES["search_voice"], text))
+        voiceover_segments: List[Dict[str, str]] = []
+        try:
+            text_segments = re.split(self.TEXT_TEMPLATES["search_voice"], text)
+            voice_segments = list(re.finditer(self.TEXT_TEMPLATES["search_voice"], text))
 
-        # Add segments without voice tags with default voice
-        for segment in text_segments:
-            segment = segment.strip()
-            if segment:
-                voiceover_segments.append({"voice": "DEFAULT", "text": segment})
+            # Process segments without voice tags
+            for segment in text_segments:
+                segment = segment.strip()
+                if segment:
+                    voiceover_segments.append({"voice": self.DEFAULT_VOICE, "text": segment})
 
-        # Add segments with specific voice tags
-        for voice_segment in voice_segments:
-            voice_tag = voice_segment.group(1).strip()
-            voice_text = voice_segment.group(2).strip()
-            for segment in voiceover_segments:
-                if segment["text"] == voice_text:
-                    segment["voice"] = voice_tag
-                    break
+            # Process segments with specific voice tags
+            for voice_segment in voice_segments:
+                voice_tag = voice_segment.group(1).strip()
+                voice_text = voice_segment.group(2).strip()
+                for segment in voiceover_segments:
+                    if segment["text"] == voice_text:
+                        segment["voice"] = voice_tag
+                        break
+
+            logger.debug(f"Processed {len(voiceover_segments)} voice segments")
+        except Exception as e:
+            logger.error(f"Error processing voices: {e}", exc_info=True)
 
         return voiceover_segments
+
+    def get_video_segments(self) -> List[VideoSegment]:
+        """
+        Returns the list of video segments.
+        """
+        return self.video_segments
