@@ -4,6 +4,7 @@ from typing import List, Tuple
 from PIL import Image
 from threading import Lock
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Ensure the src directory is in the sys.path
 import sys
@@ -23,33 +24,30 @@ class ImageGrabber:
         self._size = size
         self.download_folder = download_location
         self.temp_folder = temp_location
-        self.images_count = 0
         self.to_download = to_download
         self._memory = {}
-        self.lock = Lock()  # For thread safety
+        self.lock = Lock()
         self._initialize_folders()
         self._load_images()
-
-    def _load_images(self) -> None:
-        local_files = {}
-        for root, _, files in os.walk(self.download_folder):
-            if root == self.download_folder:
-                continue
-            keyword = os.path.basename(root).lower()
-            local_files[keyword] = [os.path.abspath(os.path.join(root, file)) for file in files]
-        self._memory = local_files
-        logger.info(f"Loaded {sum(len(files) for files in local_files.values())} images from {len(local_files)} keywords")
 
     def _initialize_folders(self):
         for folder in [self.download_folder, self.temp_folder]:
             os.makedirs(folder, exist_ok=True)
         logger.info(f"Initialized folders: {self.download_folder}, {self.temp_folder}")
 
-    def _download_from_url(self, url: str, keyword: str) -> str:
+    def _load_images(self):
+        for root, _, files in os.walk(self.download_folder):
+            if root == self.download_folder:
+                continue
+            keyword = os.path.basename(root).lower()
+            self._memory[keyword] = [os.path.abspath(os.path.join(root, file)) for file in files]
+        logger.info(f"Loaded {sum(len(files) for files in self._memory.values())} images from {len(self._memory)} keywords")
+
+    def _download_image(self, url: str, keyword: str) -> str:
         try:
-            with self.lock:  # Lock to ensure thread safety
-                self.images_count += 1
-                download_path = os.path.join(self.download_folder, keyword, f"image_{self.images_count}.jpg")
+            with self.lock:
+                image_count = len(self._memory.get(keyword, [])) + 1
+                download_path = os.path.join(self.download_folder, keyword, f"image_{image_count}.jpg")
             
             res = requests.get(url, timeout=10)
             res.raise_for_status()
@@ -60,10 +58,8 @@ class ImageGrabber:
             
             logger.debug(f"Downloaded image from {url} to {download_path}")
             return download_path
-        except requests.RequestException as e:
+        except (requests.RequestException, IOError) as e:
             logger.warning(f"Failed to download image from {url}: {e}")
-        except IOError as e:
-            logger.error(f"Failed to save image from {url}: {e}")
         return None
 
     def search_images(self, keyword: str) -> List[str]:
@@ -74,41 +70,44 @@ class ImageGrabber:
         
         logger.info(f"Downloading images for keyword: {word}")
         urls = run_search(word, "off", self.to_download, self._search_options)
-        paths = [path for path in (self._download_from_url(url, word) for url in urls) if path is not None]
+        
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_url = {executor.submit(self._download_image, url, word): url for url in urls}
+            paths = [future.result() for future in as_completed(future_to_url) if future.result() is not None]
         
         self._memory[word] = paths
         if self._resize and paths:
-            directory = os.path.dirname(paths[0])
-            self._resize_images(self._size, directory)
+            self._resize_images(word)
         
         logger.info(f"Downloaded {len(paths)} images for keyword: {word}")
         return paths
 
-    def _resize_images(self, size: Tuple[int, int], directory: str) -> None:
-        files = [os.path.join(directory, f) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-        for file in files:
+    def _resize_images(self, keyword: str):
+        directory = os.path.join(self.download_folder, keyword)
+        for file in os.listdir(directory):
+            file_path = os.path.join(directory, file)
+            if not os.path.isfile(file_path):
+                continue
             try:
-                with Image.open(file) as im:
+                with Image.open(file_path) as im:
                     if im.mode != "RGB":
                         im = im.convert("RGB")
                     
-                    background = Image.new("RGB", size)
+                    background = Image.new("RGB", self._size)
                     
-                    wr = size[0] / im.width
-                    hr = size[1] / im.height
+                    wr, hr = self._size[0] / im.width, self._size[1] / im.height
                     if wr > hr:
                         nw = int(im.width * hr)
-                        im = im.resize((nw, size[1]), Image.LANCZOS)
+                        im = im.resize((nw, self._size[1]), Image.LANCZOS)
                     else:
                         nh = int(im.height * wr)
-                        im = im.resize((size[0], nh), Image.LANCZOS)
+                        im = im.resize((self._size[0], nh), Image.LANCZOS)
                     
-                    x = (size[0] - im.width) // 2
-                    y = (size[1] - im.height) // 2
+                    x, y = (self._size[0] - im.width) // 2, (self._size[1] - im.height) // 2
                     background.paste(im, (x, y))
                     
-                    save_path = file if im.format != "WEBP" else f"{file}.{self.IMAGE_FORMAT.lower()}"
+                    save_path = file_path if im.format != "WEBP" else f"{file_path}.{self.IMAGE_FORMAT.lower()}"
                     background.save(save_path, self.IMAGE_FORMAT)
-                    logger.debug(f"Resized image: {file}")
+                    logger.debug(f"Resized image: {file_path}")
             except IOError as e:
-                logger.error(f"Failed to resize image {file}: {e}")
+                logger.error(f"Failed to resize image {file_path}: {e}")

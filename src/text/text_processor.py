@@ -12,6 +12,16 @@ from src.video.video_segment import VideoSegment
 logger = logging.getLogger(__name__)
 
 class TextProcessor:
+    def __init__(self):
+        self.text = ""
+        self.video_segments = []
+        self.sentences = []
+
+    def process_text(self, text: str):
+        self.text = text
+        self._process_text_for_images()
+
+
     TEXT_TEMPLATES = {
         "image": r"\[IMAGE:\s*(.+?)(\d*?)]",
         "search_voice": r"\[VOICE:\s*(.+?)](.+?)\[\/VOICE]",
@@ -20,11 +30,6 @@ class TextProcessor:
     DEFAULT_IMAGE_COUNT = 5
     DEFAULT_VOICE = "DEFAULT"
 
-    def __init__(self, text: str):
-        self.text = text
-        self.video_segments: List[VideoSegment] = []
-        self.sentences: List[Tuple[str, str]] = []
-        self._process_text_for_images()
 
     def _process_text_for_images(self) -> None:
         """

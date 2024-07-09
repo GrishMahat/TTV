@@ -18,7 +18,10 @@ from selenium.common.exceptions import (
     ElementNotInteractableException,
     StaleElementReferenceException,
     TimeoutException,
+    NoSuchElementException,
 )
+from selenium.webdriver.chrome.service import Service
+
 from retry import retry
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -38,7 +41,11 @@ SELENIUM_EXCEPTIONS = (
 def create_webdriver():
     opts = Options()
     opts.add_argument("--headless")
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=opts)
+    opts.add_argument("--disable-gpu")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-dev-shm-usage")
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=opts)
     try:
         yield driver
     finally:
@@ -49,10 +56,15 @@ def scroll_to_end(wd: webdriver.Chrome):
 
 @retry(exceptions=TimeoutException, tries=6, delay=0.1, backoff=2, logger=logger)
 def get_thumbnails(wd: webdriver.Chrome, want_more_than: int = 0) -> List[webdriver.remote.webelement.WebElement]:
+    scroll_to_end(wd)
     try:
-        WebDriverWait(wd, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, CSS_LOAD_MORE))).click()
-    except TimeoutException:
-        logger.warning("Load more button not found or not clickable")
+        load_more_button = wd.find_element(By.CSS_SELECTOR, CSS_LOAD_MORE)
+        if load_more_button:
+            load_more_button.click()
+    except NoSuchElementException:
+        logger.warning("Load more button not found")
+    except (ElementClickInterceptedException, ElementNotInteractableException) as e:
+        logger.warning(f"Load more button not clickable: {e}")
     
     thumbnails = wd.find_elements(By.CSS_SELECTOR, CSS_THUMBNAIL)
     if len(thumbnails) <= want_more_than:
@@ -110,7 +122,7 @@ def run_search(query: str, safe: str, n: int, options: str, out: Optional[str] =
 
 def main():
     parser = argparse.ArgumentParser(description="Perform a Google image search.")
-    parser.add_argument("query", type=str, help="Search query")
+    parser.add_argument("query", type=str, nargs='?', default="cat", help="Search query (default: 'cat')")
     parser.add_argument("--safe", type=str, default="off", help="Safe search setting")
     parser.add_argument("--n", type=int, default=20, help="Number of images to fetch")
     parser.add_argument("--options", type=str, default="", help="Additional search options")

@@ -17,47 +17,55 @@ from src.audio.audio import WaveNetTTS
 from src.video.video_segment import VideoSegment
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-# Download NLTK data
-nltk.download('punkt')
-nltk.download('stopwords')
 
 class TextToVideo:
     def __init__(self, text: str, output_file: str, segment_length: int = 100, image_size: tuple = (1920, 1080)):
         self.text = text
         self.output_file = output_file
         self.video_segments: List[VideoClip] = []
-        self.segment_number = 1
         self.segment_length = segment_length
         self.image_size = image_size
+        
+        # Initialize components
         self.image_grabber = ImageGrabber(resize=True, size=image_size)
         self.tts = WaveNetTTS()
         self.text_processor = TextProcessor()
+        
+        # Ensure NLTK data is downloaded
+        self._download_nltk_data()
+
+    @staticmethod
+    def _download_nltk_data():
+        try:
+            nltk.data.find('tokenizers/punkt')
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            nltk.download('punkt', quiet=True)
+            nltk.download('stopwords', quiet=True)
 
     def _extract_keywords(self, text: str, num_keywords: int = 3) -> List[str]:
-        # Tokenize and remove stopwords
         stop_words = set(stopwords.words('english'))
         word_tokens = word_tokenize(text.lower())
         filtered_tokens = [w for w in word_tokens if w.isalnum() and w not in stop_words]
-
-        # Get the most common words as keywords
+        
         freq_dist = nltk.FreqDist(filtered_tokens)
-        keywords = [word for word, _ in freq_dist.most_common(num_keywords)]
-        return keywords
+        return [word for word, _ in freq_dist.most_common(num_keywords)]
 
     def _create_segments(self) -> List[Dict]:
-        segments = self.text_processor.split_into_segments(self.text, self.segment_length)
+        self.text_processor.process_text(self.text)
+        segments = self.text_processor.get_video_segments()
         processed_segments = []
 
-        for i, segment_text in enumerate(segments, start=1):
-            keywords = self._extract_keywords(segment_text)
+        for i, segment in enumerate(segments, start=1):
+            keywords = self._extract_keywords(segment.text)
             processed_segments.append({
-                "text": segment_text,
-                "voiceover_text": [{"text": segment_text, "voice": "default"}],
-                "image_keyword": " ".join(keywords),
-                "segment_number": i
+                "text": segment.text,
+                "voiceover_text": segment.voiceover_text,
+                "image_keyword": segment.image_keyword or " ".join(keywords),
+                "segment_number": i,
+                "images_number": segment.images_number
             })
 
         return processed_segments
@@ -79,19 +87,44 @@ class TextToVideo:
                 self.video_segments.append(video_clip)
                 logger.info(f"Processed segment {segment['segment_number']}")
             except Exception as e:
-                logger.error(f"Error generating video segment {segment['segment_number']}: {e}")
+                logger.error(f"Error generating video segment {segment['segment_number']}: {str(e)}")
                 raise
 
     def save_video(self):
         if not self.video_segments:
             raise ValueError("No video elements to save.")
 
-        final_clip = concatenate_videoclips(self.video_segments, method="compose")
-        final_clip.write_videofile(self.output_file, codec='libx264')
-        logger.info(f"Video saved as {self.output_file}")
+        try:
+            final_clip = concatenate_videoclips(self.video_segments, method="compose")
+            final_clip.write_videofile(self.output_file, codec='libx264')
+            logger.info(f"Video saved as {self.output_file}")
+        except Exception as e:
+            logger.error(f"Error saving video: {str(e)}")
+            raise
 
     def generate_video(self):
         logger.info("Starting video generation process")
-        self.process_video_elements()
-        self.save_video()
-        logger.info("Video generation completed")
+        try:
+            self.process_video_elements()
+            self.save_video()
+            logger.info("Video generation completed successfully")
+        except Exception as e:
+            logger.error(f"Video generation failed: {str(e)}")
+            raise
+
+    def cleanup(self):
+        # Add any cleanup operations here, e.g., deleting temporary files
+        pass
+
+if __name__ == "__main__":
+    # Example usage
+    input_text = "Your input text here"
+    output_file = "output_video.mp4"
+    
+    try:
+        ttv = TextToVideo(input_text, output_file)
+        ttv.generate_video()
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+    finally:
+        ttv.cleanup()
